@@ -70,6 +70,14 @@ my $blast64 = "/projects/sate7/tools/ncbi-blast-2.2.25+/bin/";
 my $blast32 = "/projects/sate7/tools/ncbi-blast-2.2.25+-32bit/bin/";
 my $megan = "/projects/sate7/tools/megan/MEGAN";
 
+sub separate_blast_fragments {
+  my $input_file = $_[0];
+  my $blast_file = $_[1];
+  my $output_file = $_[2];
+  
+  
+}
+
 sub split_fasta {
   my $file = $_[0];
   my $output = $_[1];
