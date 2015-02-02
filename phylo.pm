@@ -5454,6 +5454,25 @@ sub map_names {
   }
 }
 
+sub rename_fasta {
+  my $input_fasta = $_[0];
+  my $prefix = $_[1];
+  my $output_file = $_[2];
+  my $output_map = $_[3];
+
+  my %fasta = %{Phylo::read_fasta_file($input_fasta,0)};
+  my $counter = 0;
+  open(MAP, ">$output_map");
+  open(OUTPUT, ">$output_file");
+  foreach my $key (keys %fasta) {
+    print OUTPUT ">$prefix$counter\n$fasta{$key}\n";
+    print MAP "$prefix$counter\t$key\n"
+    $counter++;
+  }
+  close(OUTPUT);
+  close(MAP);
+}
+
 sub rename_tree {
   my $tree_file = $_[0];
   my $map_file = $_[1];
