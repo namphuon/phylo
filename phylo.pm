@@ -70,6 +70,24 @@ my $blast64 = "/projects/sate7/tools/ncbi-blast-2.2.25+/bin/";
 my $blast32 = "/projects/sate7/tools/ncbi-blast-2.2.25+-32bit/bin/";
 my $megan = "/projects/sate7/tools/megan/MEGAN";
 
+sub get_final_alignment_tree_pasta {
+  my $log_file = $_[0];
+  my $tree_line = Phylo::trim("".`grep "Writing resulting tree" $log_file`);
+  my $alignment_line = Phylo::trim("".`grep "Writing resulting alignment" $log_file`);
+  
+  if ($tree_line eq "" or $alignment_line eq "") {
+    return (undef,undef);
+  }
+  
+  my @tree_results = split(/\s+/, $tree_line);
+  my @alignment_results = split(/\s+/, $alignment_line);
+  
+  if (not -e $tree_results[-1] or not -e $alignment_results[-1] or -s $tree_results[-1] == 0 or -s $alignment_results[-1] == 0) {
+    return (undef,undef);
+  }
+  return ($alignment_results[-1], $tree_results[-1]);
+}
+
 sub separate_blast_fragments {
   my $input_file = $_[0];
   my $blast_file = $_[1];
@@ -1315,6 +1333,19 @@ sub convert_fasta_to_fastq {
   
 }
 
+sub filter_reads_by_length {
+  my $input_file = $_[0];
+  my $output_file = $_[1];
+  my $length = $_[2];
+
+  my %fragments = %{Phylo::read_fasta_file($input_file,0)};
+  foreach my $key (keys %fragments) {
+    if (length($fragments{$key}) < $length) {
+      delete $fragments{$key};
+    }
+  }
+  Phylo::write_alignment(\%fragments, $output_file);
+}
 
 sub hmmr_filter {
   my $input_align_file = $_[0];
@@ -1904,6 +1935,27 @@ sub run_nj_paup {
   #Phylo::convert_paup_newick("$temp_file.tree", $output_file);
   #Phylo::my_cmd("$perl -p -i -e \"s/\\[.*\\]//g\" $output_file");  
   my_cmd("rm $temp_file $temp_file.log");
+}
+
+sub split_out_by_codon {
+  my $input_file = $_[0];
+  my $output_prefix = $_[1];
+  
+  my %sequences = %{Phylo::read_fasta_file($input_file)};
+  my @positions = ({},{},{});
+  local $" = "";
+  foreach my $key (keys %sequences) {
+    my @results = split(//,$sequences{$key});
+    my @codon_1 = map {$results[$_ * 3]} (0.. (scalar @results / 3)-1);
+    my @codon_2 = map {$results[$_ * 3 + 1]} (0.. (scalar @results / 3)-1);
+    my @codon_3 = map {$results[$_ * 3 + 2]} (0.. (scalar @results / 3)-1);
+    $positions[0]->{$key} = "@codon_1";
+    $positions[1]->{$key} = "@codon_2";
+    $positions[2]->{$key} = "@codon_3";
+  }
+  foreach my $idx (1..3) {
+    Phylo::write_alignment($positions[$idx-1], "$output_prefix.$idx.fasta");
+  }
 }
 
 sub remove_third_codon_position {
@@ -5315,7 +5367,7 @@ sub binomial {
 }
 
 sub has_branch_length {
-      my $input_tree = $_[0];
+  my $input_tree = $_[0];
   my $tree_string = "";
   if (not -e $input_tree) {
     return -1;
@@ -5466,7 +5518,7 @@ sub rename_fasta {
   open(OUTPUT, ">$output_file");
   foreach my $key (keys %fasta) {
     print OUTPUT ">$prefix$counter\n$fasta{$key}\n";
-    print MAP "$prefix$counter\t$key\n"
+    print MAP "$prefix$counter\t$key\n";
     $counter++;
   }
   close(OUTPUT);
