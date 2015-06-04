@@ -1937,6 +1937,17 @@ sub run_nj_paup {
   my_cmd("rm $temp_file $temp_file.log");
 }
 
+sub read_raxml_info_rates {
+  my $input_file = $_[0];
+  my $line = Phylo::trim(`grep "alpha\\[0\\]" $input_file | head -n1`."");
+  if ($line eq "") {
+    return undef;
+  }
+  $line =~ m/alpha\[0\]: (\d+\.\d+) rates\[0\] ac ag at cg ct gt: (\d+\.\d+) (\d+\.\d+) (\d+\.\d+) (\d+\.\d+) (\d+\.\d+) (\d+\.\d+)/;
+  my @rates = ($1, $2, $3, $4, $5, $6, $7);
+  return \@rates;
+}
+
 sub split_out_by_codon {
   my $input_file = $_[0];
   my $output_prefix = $_[1];
