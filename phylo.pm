@@ -1937,6 +1937,21 @@ sub run_nj_paup {
   my_cmd("rm $temp_file $temp_file.log");
 }
 
+sub combine_alignment_partitions {
+  my %genes = %{$_[0]};
+  my $partition_file = $_[1];
+  
+  my %partitions = ();
+  open(PART, $partition_file);
+  
+  my %concat = ();
+  foreach my $gene (keys %genes) {
+    foreach my $name (keys %{$genes{$gene}}) {
+      
+    }
+  }
+}
+
 sub read_raxml_info_rates {
   my $input_file = $_[0];
   my $line = Phylo::trim(`grep "alpha\\[0\\]" $input_file | head -n1`."");
@@ -5525,8 +5540,9 @@ sub rename_fasta {
 
   my %fasta = %{Phylo::read_fasta_file($input_fasta,0)};
   my $counter = 0;
-  open(MAP, ">$output_map");
-  open(OUTPUT, ">$output_file");
+  my $temp_file = Phylo::get_temp_file();
+  open(MAP, ">$temp_file.map");
+  open(OUTPUT, ">$temp_file.output");
   foreach my $key (keys %fasta) {
     print OUTPUT ">$prefix$counter\n$fasta{$key}\n";
     print MAP "$prefix$counter\t$key\n";
@@ -5534,6 +5550,8 @@ sub rename_fasta {
   }
   close(OUTPUT);
   close(MAP);
+  `mv $temp_file.map $output_map`;
+  `mv $temp_file.output $output_file`;
 }
 
 sub rename_tree {
