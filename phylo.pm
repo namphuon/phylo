@@ -1954,7 +1954,7 @@ sub combine_alignment_partitions_protein {
     $idx++;
     foreach my $gene (@{$partitions{$partition}}) {
       my $curr_length = 0;
-      foreach my $seq (keys $genes{$gene}) {
+      foreach my $seq (keys %{$genes{$gene}}) {
         $concat{$seq}.=$genes{$gene}->{$seq};
         $curr_length = length($genes{$gene}->{$seq});
       }      
