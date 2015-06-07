@@ -1961,8 +1961,8 @@ sub combine_alignment_partitions_protein {
       }
       $length+=$curr_length;      
     }
-    print OUTPUT "$curr_length\n";
-    $curr_length++;    
+    print OUTPUT "$length\n";
+    $length++;    
   }
   close(OUTPUT);
   Phylo::write_alignment(\%concat, $alignment_file);
