@@ -1937,19 +1937,33 @@ sub run_nj_paup {
   my_cmd("rm $temp_file $temp_file.log");
 }
 
-sub combine_alignment_partitions {
+sub combine_alignment_partitions_protein {
   my %genes = %{$_[0]};
-  my $partition_file = $_[1];
+  my %partitions = %{$_[1]};
+  my %partition_model = %{$_[2]};
+  my $partition_file = $_[3];
   
-  my %partitions = ();
-  open(PART, $partition_file);
-  
+  open(OUTPUT, ">$partition_file");
   my %concat = ();
-  foreach my $gene (keys %genes) {
-    foreach my $name (keys %{$genes{$gene}}) {
-      
+  my $idx = 0;
+  foreach my $partition (keys %partitions) {
+    my $length = 1;
+    local $" = "_";
+    my $name = "@{$partitions{$partition}";
+    print OUTPUT "$partition_model{$partition}, combined_$idx=1-";
+    $idx++;
+    foreach my $gene (@{$partitions{$partition}}) {
+      my $curr_length = 0;
+      foreach my $seq (keys $genes{$gene}) {
+        $concat{$seq}.=$genes{$gene}->{$seq};
+        $curr_length = length($genes{$gene}->{$seq});
+      }      
+      $length+=$curr_length;
+      print OUTPUT "$curr_length\n";
+      $curr_length++;
     }
   }
+  close(OUTPUT);
 }
 
 sub read_raxml_info_rates {
