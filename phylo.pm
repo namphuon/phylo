@@ -1959,8 +1959,9 @@ sub combine_alignment_partitions_protein {
         $concat{$seq}.=$genes{$gene}->{$seq};
         $curr_length = length($genes{$gene}->{$seq});
       }
-      $length+=$curr_length-1;      
+      $length+=$curr_length;      
     }
+    $length--;
     print OUTPUT "$length\n";
     $length++;    
   }
