@@ -1947,8 +1947,8 @@ sub combine_alignment_partitions_protein {
   open(OUTPUT, ">$partition_file");
   my %concat = ();
   my $idx = 0;
-  foreach my $partition (keys %partitions) {
-    my $length = 1;
+  my $length = 1;
+  foreach my $partition (keys %partitions) {    
     local $" = "_";
     my $name = "@{$partitions{$partition}}";
     print OUTPUT "$partition_model{$partition}, combined_$idx=1-";
@@ -1958,11 +1958,11 @@ sub combine_alignment_partitions_protein {
       foreach my $seq (keys %{$genes{$gene}}) {
         $concat{$seq}.=$genes{$gene}->{$seq};
         $curr_length = length($genes{$gene}->{$seq});
-      }      
-      $length+=$curr_length;
-      print OUTPUT "$curr_length\n";
-      $curr_length++;
+      }
+      $length+=$curr_length;      
     }
+    print OUTPUT "$curr_length\n";
+    $curr_length++;    
   }
   close(OUTPUT);
   Phylo::write_alignment(\%concat, $alignment_file);
