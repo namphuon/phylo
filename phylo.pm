@@ -1984,7 +1984,7 @@ sub split_out_by_codon {
   my $input_file = $_[0];
   my $output_prefix = $_[1];
   
-  my %sequences = %{Phylo::read_fasta_file($input_file)};
+  my %sequences = %{Phylo::read_fasta_file($input_file,0)};
   my @positions = ({},{},{});
   local $" = "";
   foreach my $key (keys %sequences) {
