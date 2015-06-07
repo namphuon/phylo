@@ -1949,7 +1949,7 @@ sub combine_alignment_partitions_protein {
   foreach my $partition (keys %partitions) {
     my $length = 1;
     local $" = "_";
-    my $name = "@{$partitions{$partition}";
+    my $name = "@{$partitions{$partition}}";
     print OUTPUT "$partition_model{$partition}, combined_$idx=1-";
     $idx++;
     foreach my $gene (@{$partitions{$partition}}) {
