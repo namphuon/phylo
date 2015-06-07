@@ -1941,7 +1941,8 @@ sub combine_alignment_partitions_protein {
   my %genes = %{$_[0]};
   my %partitions = %{$_[1]};
   my %partition_model = %{$_[2]};
-  my $partition_file = $_[3];
+  my $alignment_file = $_[3];
+  my $partition_file = $_[4];
   
   open(OUTPUT, ">$partition_file");
   my %concat = ();
@@ -1964,6 +1965,7 @@ sub combine_alignment_partitions_protein {
     }
   }
   close(OUTPUT);
+  Phylo::write_alignment(\%concat, $alignment_file);
 }
 
 sub read_raxml_info_rates {
