@@ -70,6 +70,17 @@ my $blast64 = "/projects/sate7/tools/ncbi-blast-2.2.25+/bin/";
 my $blast32 = "/projects/sate7/tools/ncbi-blast-2.2.25+-32bit/bin/";
 my $megan = "/projects/sate7/tools/megan/MEGAN";
 
+sub median {
+  my @nums = @{$_[0]};
+  my @vals = sort {$a <=> $b} @nums;
+  my $len = scalar @vals;
+  if ($len % 2 == 0) {
+    return ($vals[int($len/2)-1] + $vals[int($len/2)])/2;
+  } else {
+    return $vals[int($len/2)];
+  }
+}
+
 sub get_final_alignment_tree_pasta {
   my $log_file = $_[0];
   my $tree_line = Phylo::trim("".`grep "Writing resulting tree" $log_file`);
