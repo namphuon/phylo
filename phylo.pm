@@ -16,6 +16,7 @@ use Time::localtime;
 #use Statistics::Distributions;
 #use Bio::Phylo::IO;
 #use Bio::TreeIO;
+use PerlIO::gzip;
 use POSIX qw(ceil floor);
 use Scalar::Util qw(looks_like_number);
 use Data::Dumper;
@@ -70,6 +71,31 @@ my $blast64 = "/projects/sate7/tools/ncbi-blast-2.2.25+/bin/";
 my $blast32 = "/projects/sate7/tools/ncbi-blast-2.2.25+-32bit/bin/";
 my $megan = "/projects/sate7/tools/megan/MEGAN";
 
+sub generate_kmers_tree {
+  my %sequences = %{$_[0]};
+  my $kmer = $_[1];
+  my %words = ();
+  my $idx = 0;
+  foreach my $word (values %sequences) {
+    %words = (%words, %{get_kmers($word,$kmer)});
+    $idx++;
+    if ($idx % 10 == 9) {
+      print "$idx\n";
+    }
+  }
+  return \%words;
+}
+
+sub get_kmers {
+  my $str = $_[0];
+  my $len = $_[1];
+  my %words = ();
+  for my $window (0..(length($str)-$len)) {
+    $words{substr($str,$window,$len)} = "";
+  }
+  return \%words;
+}
+
 sub median {
   my @nums = @{$_[0]};
   my @vals = sort {$a <=> $b} @nums;
@@ -106,6 +132,29 @@ sub separate_blast_fragments {
   
   
 }
+
+sub fast_split_fasta {
+  my $file = $_[0];
+  my $output = $_[1];
+  my $size = $_[2];
+
+  open(INPUT, $file);  
+  my $counter = 0;
+  my $idx = 0;
+  open(OUTPUT, ">$output.$idx");
+  while (my $line = <INPUT>) {
+    my $seq = <INPUT>;
+    print OUTPUT "$line$seq";
+    $counter++;
+    if ($counter % ($size+1) == $size) {
+      close(OUTPUT);
+      $idx++;
+      open(OUTPUT, ">$output.$idx");
+    }        
+  }
+  close(OUTPUT);
+}
+
 
 sub split_fasta {
   my $file = $_[0];
@@ -321,8 +370,8 @@ sub getFastFPFN {
   my $ref_temp = get_temp_file() . "_";
   my $est_tmp= "$ref_temp.estimated";
 
-  `/lusr/bin/perl /projects/sate9/namphuon/programs/phylo/CompareTree.pl -tree $true_tree -versus $estimated_tree -output $ref_temp > $ref_temp.tmp`;
-  `/lusr/bin/perl /projects/sate9/namphuon/programs/phylo/CompareTree.pl -versus $true_tree -tree $estimated_tree -output $est_tmp > $est_tmp.tmp`;
+  `CompareTree.pl -tree $true_tree -versus $estimated_tree -output $ref_temp > $ref_temp.tmp`;
+  `CompareTree.pl -versus $true_tree -tree $estimated_tree -output $est_tmp > $est_tmp.tmp`;
 
   if (not -e $ref_temp) {
     print "Can't find reference result\n";
@@ -1948,6 +1997,28 @@ sub run_nj_paup {
   my_cmd("rm $temp_file $temp_file.log");
 }
 
+sub build_supermatrix {
+  my %genes = %{$_[0]};
+  my %names = ();
+  foreach my $gene (keys %genes) {
+    foreach my $seq (keys %{$genes{$gene}}) {
+      $names{$seq} = "";
+    }
+  }
+  foreach my $gene (keys %genes) {
+    my @ns = keys %{$genes{$gene}};
+    my $length = '-' x length($genes{$gene}->{$ns[0]});
+    foreach my $seq (keys %names) {
+      if (not defined $genes{$gene}->{$seq}) {
+        $names{$seq}.=$length;
+      } else {
+        $names{$seq}.= $genes{$gene}->{$seq};
+      }
+    }
+  }
+  return \%names;  
+}
+
 sub combine_alignment_partitions_protein {
   my %genes = %{$_[0]};
   my %partitions = %{$_[1]};
@@ -3096,6 +3167,51 @@ sub align_opal_mem {
   
   my_cmd("java -Xmx8g -jar $bin/opal.jar --in $input --out $output");
 }
+
+sub extract_reads_fasta {
+  my %reads = %{$_[0]};
+  my $file = $_[1];
+  
+  open(INPUT, $file);
+  while (my $line = <INPUT>) {  
+    $line = Phylo::trim($line);
+    $line =~ m/>(.*)/;
+    my $name = $1;
+    my $seq = trim(<INPUT>."");
+    if (defined $reads{$name}) {
+      $reads{$name} = $seq;
+    }
+  }
+  close(INPUT);
+  return \%reads;
+}
+
+sub extract_reads_fastq_gz {
+  my %reads = %{$_[0]};
+  my $file = $_[1];
+
+  print "Extracting $_[0]\n";
+  
+  open IN,"<:gzip",$file || open IN,$file || die $!;
+  my $count = 0;
+  while(my $read = <IN>){
+    $count++;
+    if ($count % 100000 == 99999) {
+      print "$count fastq\n";
+    }        
+  
+    $read = Phylo::trim($read);
+    my $seq = <IN>;
+    my $plus = <IN>;
+    my $quality = <IN>;
+    if (defined $reads{$read}) {
+      $reads{$read} = "$read\n$seq$plus$quality";
+    }
+  }
+  close IN;    
+  return \%reads;
+}
+
 
 sub align_muscle {
   my $input = $_[0];
